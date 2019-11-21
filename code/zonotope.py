@@ -70,7 +70,8 @@ class Normalization(nn.Module):
 
 
 class ReLU(nn.Module):
-    """Modified ReLU that tries to approximate the Zonotope region. Adds a new sample to batch sample, if new noise parameter is added to system."""
+    """Modified ReLU that tries to approximate the Zonotope region.
+    Adds a new sample to batch sample, if new noise parameter is added to system."""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
