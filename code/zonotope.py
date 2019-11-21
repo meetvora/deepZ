@@ -6,9 +6,7 @@ INPUT_SIZE = 28
 
 
 class Model(nn.Module):
-    """
-	Creates a copy of provided model with noise params as new images, along batch axis.
-	"""
+    """Creates a copy of provided model with noise params as new images, along batch axis."""
 
     def __init__(self, model: nn.Module, k: int, eps: float):
         super().__init__()
@@ -48,9 +46,7 @@ class Model(nn.Module):
 
 
 class Linear(nn.Module):
-    """
-	Modified Linear layer such that bias is added only to the first sample in batch
-	"""
+    """ Modified Linear layer such that bias is added only to the first sample in batch"""
 
     def __init__(self, layer: torch.Tensor):
         super().__init__()
@@ -63,9 +59,7 @@ class Linear(nn.Module):
 
 
 class Normalization(nn.Module):
-    """
-	Modified Normalization layer such that bias is added only to the first sample in batch
-	"""
+    """Modified Normalization layer such that bias is added only to the first sample in batch"""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -76,10 +70,7 @@ class Normalization(nn.Module):
 
 
 class ReLU(nn.Module):
-    """
-	Modified ReLU that tries to approximate the Zonotope region.
-	Adds a new sample to batch sample, if new noise parameter is added to system.
-	"""
+    """Modified ReLU that tries to approximate the Zonotope region. Adds a new sample to batch sample, if new noise parameter is added to system."""
 
     def __init__(self, *args, **kwargs):
         super().__init__()
