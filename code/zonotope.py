@@ -15,16 +15,9 @@ class Model(nn.Module):
         self.setNoiseParams(k, eps)
 
     def setNoiseParams(self, k: int, eps: float):
-        self.noise_params = torch.FloatTensor(k, 1, INPUT_SIZE, INPUT_SIZE).uniform_(
-            0, 1
-        )
-        self.noise_params = (self.noise_params * eps) / self.noise_params.sum(dim=0)[
-            0
-        ].unsqueeze(0).unsqueeze(0)
-        self.noise_params = (
-            self.noise_params
-            * (2 * torch.randint(0, 2, self.noise_params.shape) - 1).float()
-        )
+        self.noise_params = torch.FloatTensor(k, 1, INPUT_SIZE, INPUT_SIZE).uniform_(0, 1)
+        self.noise_params = (self.noise_params * eps) / self.noise_params.sum(dim=0)[0].unsqueeze(0).unsqueeze(0)
+        self.noise_params = self.noise_params * (2 * torch.randint(0, 2, self.noise_params.shape) - 1).float()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         zonotope_input = torch.cat([x, self.noise_params], dim=0)
@@ -32,11 +25,7 @@ class Model(nn.Module):
 
     def modify(self, layer: nn.Module) -> nn.Module:
         layer_name = layer.__class__.__name__
-        modified_layers = {
-            "Normalization": Normalization,
-            "Linear": Linear,
-            "ReLU": ReLU,
-        }
+        modified_layers = {"Normalization": Normalization, "Linear": Linear, "ReLU": ReLU}
 
         if layer_name not in modified_layers:
             return copy.deepcopy(layer)
@@ -90,19 +79,11 @@ class ReLU(nn.Module):
         x *= (~neg_mask).float()  # Setting all values 0 if upper_bound is non-positive.
         mask = ~(neg_mask + pos_mask)  # Mask is 1 where crossing takes place.
 
-        return (
-            self.convexApprox(x, upper_bound, lower_bound, mask)
-            if torch.any(mask)
-            else x
-        )
+        return self.convexApprox(x, upper_bound, lower_bound, mask) if torch.any(mask) else x
 
     def convexApprox(
-        self,
-        x: torch.Tensor,
-        upper_bound: torch.Tensor,
-        lower_bound: torch.Tensor,
-        mask: torch.Tensor,
-    ):
+        self, x: torch.Tensor, upper_bound: torch.Tensor, lower_bound: torch.Tensor, mask: torch.Tensor
+    ) -> torch.Tensor:
         # TODO: Improve slope calculation algorithm.
 
         # Currently finds least area zonotope.

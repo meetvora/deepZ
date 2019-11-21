@@ -41,16 +41,7 @@ class Conv(nn.Module):
         img_dim = input_size
 
         for n_channels, kernel_size, stride, padding in conv_layers:
-            layers += [
-                nn.Conv2d(
-                    prev_channels,
-                    n_channels,
-                    kernel_size,
-                    stride=stride,
-                    padding=padding,
-                ),
-                nn.ReLU(),
-            ]
+            layers += [nn.Conv2d(prev_channels, n_channels, kernel_size, stride=stride, padding=padding), nn.ReLU()]
             prev_channels = n_channels
             img_dim = img_dim // stride
         layers += [nn.Flatten()]
