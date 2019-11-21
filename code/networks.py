@@ -45,7 +45,11 @@ class Conv(nn.Module):
 
         for n_channels, kernel_size, stride, padding in conv_layers:
             layers += [
-                nn.Conv2d(prev_channels, n_channels, kernel_size, stride=stride, padding=padding),
+                nn.Conv2d(prev_channels,
+                          n_channels,
+                          kernel_size,
+                          stride=stride,
+                          padding=padding),
                 nn.ReLU(),
             ]
             prev_channels = n_channels
