@@ -21,7 +21,6 @@ class Model(nn.Module):
             dim=0)[0].unsqueeze(0).unsqueeze(0)
         self.noise_params = self.noise_params * (
             2 * torch.randint(0, 2, self.noise_params.shape) - 1).float()
-        assert torch.all(torch.abs(self.noise_params).sum(dim=0) == eps)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         zonotope_input = torch.cat([x, self.noise_params], dim=0)
@@ -53,7 +52,7 @@ class Linear(nn.Module):
         self.layer = layer
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        rectified_bias = self.layer.bias.data.unsqueeze(0).repeat(len(x), 1)
+        rectified_bias = -self.layer.bias.data.unsqueeze(0).repeat(len(x), 1)
         rectified_bias[0] *= 0
         return self.layer(x) + rectified_bias
 
