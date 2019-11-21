@@ -3,7 +3,6 @@ import torch.nn as nn
 
 
 class Normalization(nn.Module):
-
     def __init__(self, device):
         super(Normalization, self).__init__()
         self.mean = torch.FloatTensor([0.1307]).view((1, 1, 1, 1)).to(device)
@@ -14,7 +13,6 @@ class Normalization(nn.Module):
 
 
 class FullyConnected(nn.Module):
-
     def __init__(self, device, input_size, fc_layers):
         super(FullyConnected, self).__init__()
 
@@ -32,7 +30,6 @@ class FullyConnected(nn.Module):
 
 
 class Conv(nn.Module):
-
     def __init__(self, device, input_size, conv_layers, fc_layers, n_class=10):
         super(Conv, self).__init__()
 
@@ -45,11 +42,13 @@ class Conv(nn.Module):
 
         for n_channels, kernel_size, stride, padding in conv_layers:
             layers += [
-                nn.Conv2d(prev_channels,
-                          n_channels,
-                          kernel_size,
-                          stride=stride,
-                          padding=padding),
+                nn.Conv2d(
+                    prev_channels,
+                    n_channels,
+                    kernel_size,
+                    stride=stride,
+                    padding=padding,
+                ),
                 nn.ReLU(),
             ]
             prev_channels = n_channels

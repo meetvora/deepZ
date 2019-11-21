@@ -15,12 +15,16 @@ class Model(nn.Module):
         self.setNoiseParams(k, eps)
 
     def setNoiseParams(self, k: int, eps: float):
-        self.noise_params = torch.FloatTensor(k, 1, INPUT_SIZE,
-                                              INPUT_SIZE).uniform_(0, 1)
-        self.noise_params = (self.noise_params * eps) / self.noise_params.sum(
-            dim=0)[0].unsqueeze(0).unsqueeze(0)
-        self.noise_params = self.noise_params * (
-            2 * torch.randint(0, 2, self.noise_params.shape) - 1).float()
+        self.noise_params = torch.FloatTensor(k, 1, INPUT_SIZE, INPUT_SIZE).uniform_(
+            0, 1
+        )
+        self.noise_params = (self.noise_params * eps) / self.noise_params.sum(dim=0)[
+            0
+        ].unsqueeze(0).unsqueeze(0)
+        self.noise_params = (
+            self.noise_params
+            * (2 * torch.randint(0, 2, self.noise_params.shape) - 1).float()
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         zonotope_input = torch.cat([x, self.noise_params], dim=0)
@@ -29,9 +33,9 @@ class Model(nn.Module):
     def modify(self, layer: nn.Module) -> nn.Module:
         layer_name = layer.__class__.__name__
         modified_layers = {
-            'Normalization': Normalization,
-            'Linear': Linear,
-            'ReLU': ReLU
+            "Normalization": Normalization,
+            "Linear": Linear,
+            "ReLU": ReLU,
         }
 
         if layer_name not in modified_layers:
@@ -40,7 +44,7 @@ class Model(nn.Module):
         return modified_layers[layer_name](layer)
 
     def updateConvexApprox(self):
-        #TODO. Ideas: Update slope and/or k
+        # TODO. Ideas: Update slope and/or k
         pass
 
 
@@ -79,27 +83,32 @@ class ReLU(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         noise_magnitude = torch.abs(x[1:]).sum(dim=0)
-        lower_bound, upper_bound = (x[0] - noise_magnitude,
-                                    x[0] + noise_magnitude)
+        lower_bound, upper_bound = (x[0] - noise_magnitude, x[0] + noise_magnitude)
 
-        neg_mask = (upper_bound <= 0)
-        pos_mask = (lower_bound >= 0)
-        x *= (~neg_mask
-             ).float()  # Setting all values 0 if upper_bound is non-positive.
+        neg_mask = upper_bound <= 0
+        pos_mask = lower_bound >= 0
+        x *= (~neg_mask).float()  # Setting all values 0 if upper_bound is non-positive.
         mask = ~(neg_mask + pos_mask)  # Mask is 1 where crossing takes place.
 
-        return self.convexApprox(x, upper_bound, lower_bound,
-                                 mask) if torch.any(mask) else x
+        return (
+            self.convexApprox(x, upper_bound, lower_bound, mask)
+            if torch.any(mask)
+            else x
+        )
 
-    def convexApprox(self, x: torch.Tensor, upper_bound: torch.Tensor,
-                     lower_bound: torch.Tensor, mask: torch.Tensor):
-        #TODO: Improve slope calculation algorithm.
+    def convexApprox(
+        self,
+        x: torch.Tensor,
+        upper_bound: torch.Tensor,
+        lower_bound: torch.Tensor,
+        mask: torch.Tensor,
+    ):
+        # TODO: Improve slope calculation algorithm.
 
         # Currently finds least area zonotope.
         self.slope = upper_bound / (upper_bound - lower_bound)
         self.intercept = -(self.slope * lower_bound) / 2
         x[0] = self.slope * x[0] + self.intercept
-        new_noise_param = (torch.ones_like(x[0]) *
-                           self.intercept) * mask.float()
+        new_noise_param = (torch.ones_like(x[0]) * self.intercept) * mask.float()
         x = torch.cat([x, new_noise_param.unsqueeze(0)], dim=0)
         return x
