@@ -1,6 +1,7 @@
 import copy
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 INPUT_SIZE = 28
 
@@ -23,7 +24,7 @@ class Model(nn.Module):
 
     def modify(self, layer: nn.Module) -> nn.Module:
         layer_name = layer.__class__.__name__
-        modified_layers = {"Normalization": Normalization, "Linear": Linear, "ReLU": ReLU}
+        modified_layers = {"Conv2d": Conv, "Linear": Linear, "Normalization": Normalization, "ReLU": ReLU}
 
         if layer_name not in modified_layers:
             return copy.deepcopy(layer)
@@ -42,7 +43,7 @@ class Linear(nn.Module):
     Modified Linear layer such that bias is added only to the first sample in batch.
     """
 
-    def __init__(self, layer: torch.Tensor):
+    def __init__(self, layer: nn.Module):
         super().__init__()
         self.weight = layer.weight.data.T
         self.bias = layer.bias.data
@@ -50,6 +51,29 @@ class Linear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         y = torch.mm(x, self.weight)
         y[0] += self.bias
+        del x
+        return y
+
+
+class Conv(nn.Module):
+    """
+    Modified Convolutional layer such that bias is added only to the first sample in batch.
+    """
+
+    def __init__(self, layer: nn.Module):
+        super().__init__()
+        self.weight = layer.weight.data
+        self.bias = layer.bias.data
+        self.stride = layer.stride
+        self.padding = layer.padding
+        self.dilation = layer.dilation
+        self.groups = layer.groups
+        self.zero_bias = torch.zeros_like(self.bias)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        y = F.conv2d(x, self.weight, self.zero_bias, self.stride, self.padding, self.dilation, self.groups)
+        y[0] += self.bias[:, None, None].repeat(1, y.shape[2], y.shape[3])
+        del x
         return y
 
 
@@ -104,7 +128,7 @@ class ReLU(nn.Module):
         x[0] = (x[0] + self.intercept * 0.5) * mask + (1 - mask) * x[0]
         new_eps_term = (torch.ones_like(x[0]) * self.intercept * 0.5) * mask
 
-        y = torch.cat([x, new_eps_term.unsqueeze(0)], dim=0)
+        y = torch.cat([x, new_eps_term[None, :]], dim=0)
         del x, new_eps_term
         return y
 

@@ -1,5 +1,7 @@
 import argparse
+import logging
 import torch
+
 from networks import FullyConnected, Conv
 from utils import verify
 import zonotope
@@ -9,32 +11,38 @@ INPUT_SIZE = 28
 
 torch.set_grad_enabled(False)
 
+parser = argparse.ArgumentParser(description="Neural network verification using DeepZ relaxation")
+parser.add_argument(
+    "--net",
+    type=str,
+    choices=["fc1", "fc2", "fc3", "fc4", "fc5", "conv1", "conv2", "conv3", "conv4", "conv5"],
+    required=True,
+    help="Neural network to verify.",
+)
+parser.add_argument("--spec", type=str, required=True, help="Test case to verify.")
+parser.add_argument("--debug", action="store_true", help="Test case to verify.")
+args = parser.parse_args()
 
-def analyze(net, inputs, eps, true_label):
+logging.basicConfig(level=(10 if args.debug else 20), format="%(asctime)s :: %(message)s")
+logger = logging.getLogger(__name__)
+
+
+def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: int):
     model = zonotope.Model(net, eps=eps)
     base_pred, zono_pred = net(inputs), model(inputs)
 
     del net
-    print(f"[+] True label: {true_label} \n[+] Base predictions: {base_pred[0]}.")
+    logger.debug(f"[+] True label: {true_label}")
+    logger.debug(f"Base predictions: {base_pred[0]}")
 
     while not verify(zono_pred, true_label):
-        # return False # Uncomment to while debugging.
+        if args.debug:
+            return False
         model.updateParams()
     return True
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Neural network verification using DeepZ relaxation")
-    parser.add_argument(
-        "--net",
-        type=str,
-        choices=["fc1", "fc2", "fc3", "fc4", "fc5", "conv1", "conv2", "conv3", "conv4", "conv5"],
-        required=True,
-        help="Neural network to verify.",
-    )
-    parser.add_argument("--spec", type=str, required=True, help="Test case to verify.")
-    args = parser.parse_args()
-
     with open(args.spec, "r") as f:
         lines = [line[:-1] for line in f.readlines()]
         true_label = int(lines[0])
