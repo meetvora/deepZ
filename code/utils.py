@@ -14,7 +14,9 @@ def verify(zonotope_predictions: torch.Tensor, true_label: int) -> bool:
           if value @ `true_label` is highest.
 
     TODO: a) Input values can be b/w [0, 1]. Certain `eps_term` in Zonotope might change their upper or lower bound.
-          b) Other points to check so that verification is sound and complete.
+          b) `condition` in `isExtremumValid` checks for negative & positive values. Extend to non-positive & 
+             non-negative
+          c) Other points to check so that verification is sound and complete.
     """
 
     def isExtremumValid(minima: bool, label: int) -> torch.Tensor:
