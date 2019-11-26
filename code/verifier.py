@@ -7,13 +7,19 @@ import zonotope
 DEVICE = "cpu"
 INPUT_SIZE = 28
 
+torch.set_grad_enabled(False)
+
 
 def analyze(net, inputs, eps, true_label):
-    predictions = net(inputs)
-    model = zonotope.Model(net, k=10, eps=eps)
+    model = zonotope.Model(net, eps=eps)
+    base_pred, zono_pred = net(inputs), model(inputs)
+
     del net
-    while not verify(model(inputs), true_label):
-        model.updateConvexApprox()
+    print(f"[+] True label: {true_label} \n[+] Base predictions: {base_pred[0]}.")
+
+    while not verify(zono_pred, true_label):
+        # return False # Uncomment to while debugging.
+        model.updateParams()
     return True
 
 
