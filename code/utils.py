@@ -25,7 +25,7 @@ def verify(zonotope_predictions: torch.Tensor, true_label: int) -> bool:
 
         logger.debug(f"Values @ {'minimum' if minima else 'maximum'} of `label: {label}`: {eps_config_values}")
 
-        return eps_config_values.argmax().item() != true_label
+        return eps_config_values.argmax().item() == true_label
 
     if not isExtremumValid(minima=True, label=true_label):
         return False
