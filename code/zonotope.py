@@ -32,7 +32,7 @@ class Model(nn.Module):
 
     def updateParams(self):
         # TODO. Idea: Update slope & intercept of present ReLU layers.
-        for layer in self.net.layers:
+        for layer in self.net:
             if isinstance(layer, ReLU):
                 layer.updateParams()
 
