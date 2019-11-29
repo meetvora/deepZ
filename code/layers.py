@@ -67,7 +67,7 @@ class ReLU(nn.Module):
     Idea:
         a) `slope` is an optional attribute. In case no crossing takes place, given ReLU is irrelevant & thus it's
            `slope` is not optimized.
-        b) During the forward pass, if any crossing takes place, `slope` is intialized as `Variable`, such that 
+        b) During the forward pass, if any crossing takes place, `slope` is intialized as `Variable`, such that
            gradients are calculated with respect to it. See `_leastArea()` for implementation.
         c) `lower_bound` and `upper_bound` define the state of ReLU and hence used as attributes.
         d) `intercept` for ReLU is a function of `slope`.
@@ -95,7 +95,7 @@ class ReLU(nn.Module):
         return y
 
     def addNewEpsilon(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        self.slope.data.clamp_(min=0, max=1) # Requirement!
+        self.slope.data.clamp_(min=0, max=1)  # Requirement!
 
         x = self.slope * x * mask + (1 - mask) * x
         x[0] = (x[0] + self.intercept * 0.5) * mask + (1 - mask) * x[0]

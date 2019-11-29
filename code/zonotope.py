@@ -1,7 +1,6 @@
 import logging
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from layers import modLayer, ReLU
 
@@ -24,7 +23,7 @@ class Model(nn.Module):
     `eps_term` (torch.FloatTensor): Constant. Independent 'epsilon terms' defined to construct L-inf norm perturbation.
                                     Shape: (768, 1, 28, 28).
     `true_label` (int): As name suggests.
-    `_max_config_values` (torch.Tensor): For each label 'l', we calculate values of final epsilon terms such that 
+    `_max_config_values` (torch.Tensor): For each label 'l', we calculate values of final epsilon terms such that
                                          score[l] obtains its maxima. Shape: (10, 10).
     `_min_config_values` (torch.Tensor): For our true label, we calculate values of final epsilon terms such that
                                          score[true_label] obtains it's minima. Shape: (10, )
@@ -51,7 +50,7 @@ class Model(nn.Module):
 
         # Losses are clipped such that values below -0.1 are set to -0.1. This is done to avoid effect of very large
         # negative values for certain neurons, which can take entire mean down. Clamping allows to ignore neurons which
-        # are already less activated than our `true_label` 
+        # are already less activated than our `true_label`
         loss = torch.mean(torch.clamp(self._min_config_values - self._min_config_values[self.true_label], -0.1))
 
         # Mean multiplied by `NUM_CLASSES` as mean divides sum by `NUM_CLASSES` * `NUM_CLASSES`
@@ -79,13 +78,13 @@ class Model(nn.Module):
 
     def verify(self, x: torch.Tensor) -> bool:
         """
-        Idea: a) Calculate values for other neurons at the point where `zonotope_predictions[true_label]` achieves it's 
+        Idea: a) Calculate values for other neurons at the point where `zonotope_predictions[true_label]` achieves it's
               minimum value. Check if value @ `true_label` is highest.
               b) The, for all other labels, find the point where `zonotope_predictions[label]` achieves it's maximum. Check
               if value @ `true_label` is highest.
 
         TODO: a) Input values can be b/w [0, 1]. Certain `eps_term` in Zonotope might change their upper or lower bound.
-              b) `condition` in `isExtremumValid` checks for negative & positive values. Extend to non-positive & 
+              b) `condition` in `isExtremumValid` checks for negative & positive values. Extend to non-positive &
                  non-negative
               c) Other points to check so that verification is sound and complete.
         """
