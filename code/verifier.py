@@ -2,14 +2,11 @@ import argparse
 import logging
 import torch
 
-from networks import FullyConnected, Conv
-from utils import verify
+from networks import Conv, FullyConnected
 import zonotope
 
 DEVICE = "cpu"
 INPUT_SIZE = 28
-
-torch.set_grad_enabled(False)
 
 parser = argparse.ArgumentParser(description="Neural network verification using DeepZ relaxation")
 parser.add_argument(
@@ -20,23 +17,26 @@ parser.add_argument(
     help="Neural network to verify.",
 )
 parser.add_argument("--spec", type=str, required=True, help="Test case to verify.")
-parser.add_argument("--debug", action="store_true", help="Test case to verify.")
+parser.add_argument("--debug", action="store_true", help="Flag to enable debug.")
+parser.add_argument("--train", action="store_true", help="Flag to train `slope`.")
 args = parser.parse_args()
+
+torch.set_grad_enabled(args.train)
 
 logging.basicConfig(level=(10 if args.debug else 20), format="%(asctime)s :: %(message)s")
 logger = logging.getLogger(__name__)
 
 
-def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: int):
-    model = zonotope.Model(net, eps=eps)
-    base_pred, zono_pred = net(inputs), model(inputs)
-
+def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: int) -> bool:
+    model = zonotope.Model(net, eps=eps, true_label=true_label)
+    base_pred = net(inputs)
     del net
+
     logger.debug(f"[+] True label: {true_label}")
     logger.debug(f"Base predictions: {base_pred[0]}")
 
-    while not verify(zono_pred, true_label):
-        if args.debug:
+    while not model.verify(inputs):
+        if not args.train:
             return False
         model.updateParams()
     return True
