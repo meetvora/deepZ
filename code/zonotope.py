@@ -22,7 +22,7 @@ class Model(nn.Module):
 
     `net` (nn.Module): The NN with modified layers (in `layers.py`).
     `eps_term` (torch.FloatTensor): Constant. Independent 'epsilon terms' defined to construct L-inf norm perturbation.
-                                    Shape: (768 * 768, 1, 28, 28).
+                                    Shape: (768, 1, 28, 28).
     `true_label` (int): As name suggests.
     `_max_config_values` (torch.Tensor): For each label 'l', we calculate values of final epsilon terms such that 
                                          score[l] obtains its maxima. Shape: (10, 10).
@@ -47,12 +47,15 @@ class Model(nn.Module):
         # Calculates the gradient of `loss` wrt to ReLU slopes.
         # TODO: Improve training objective.
 
-        optimizer = torch.optim.SGD(self.parameters(), lr=1e-3, weight_decay=0)
-        loss = torch.mean(torch.clamp(self._min_config_values - self._min_config_values[self.true_label], -1))
-        for label in range(NUM_CLASSES):
-            loss += torch.mean(
-                torch.clamp(self._max_config_values[label] - self._max_config_values[label][self.true_label], -1)
-            )
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.01, weight_decay=0)
+
+        # Losses are clipped such that values below -0.1 are set to -0.1. This is done to avoid effect of very large
+        # negative values for certain neurons, which can take entire mean down. Clamping allows to ignore neurons which
+        # are already less activated than our `true_label` 
+        loss = torch.mean(torch.clamp(self._min_config_values - self._min_config_values[self.true_label], -0.1))
+
+        # Mean multiplied by `NUM_CLASSES` as mean divides sum by `NUM_CLASSES` * `NUM_CLASSES`
+        loss += torch.mean(torch.clamp(self._max_config_values.T - self._max_config_values[:, self.true_label], -0.1)) * NUM_CLASSES
 
         optimizer.zero_grad()
         loss.backward(retain_graph=True)

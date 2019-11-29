@@ -84,9 +84,9 @@ class ReLU(nn.Module):
         y = x * (~neg_mask).float()  # Setting all values 0 if upper_bound is non-positive.
         mask = ~(neg_mask + pos_mask)  # Mask is 1 where crossing takes place.
 
-        return self._convexApprox(y, mask.float()) if torch.any(mask) else y
+        return self.convexApprox(y, mask.float()) if torch.any(mask) else y
 
-    def _convexApprox(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
+    def convexApprox(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         if not hasattr(self, "slope"):
             self.leastArea()
 
@@ -95,7 +95,8 @@ class ReLU(nn.Module):
         return y
 
     def addNewEpsilon(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
-        self.slope.data.clamp_(min=0, max=1)
+        self.slope.data.clamp_(min=0, max=1) # Requirement!
+
         x = self.slope * x * mask + (1 - mask) * x
         x[0] = (x[0] + self.intercept * 0.5) * mask + (1 - mask) * x[0]
         new_eps_term = (torch.ones_like(x[0]) * self.intercept * 0.5) * mask
