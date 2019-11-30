@@ -3,6 +3,7 @@ import copy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.autograd import Variable
 
 torch.autograd.set_detect_anomaly(True)
 
@@ -68,7 +69,7 @@ class ReLU(nn.Module):
         a) `slope` is an optional attribute. In case no crossing takes place, given ReLU is irrelevant & thus it's
            `slope` is not optimized.
         b) During the forward pass, if any crossing takes place, `slope` is intialized as `Variable`, such that
-           gradients are calculated with respect to it. See `_leastArea()` for implementation.
+           gradients are calculated with respect to it. See `leastArea()` for implementation.
         c) `lower_bound` and `upper_bound` define the state of ReLU and hence used as attributes.
         d) `intercept` for ReLU is a function of `slope`.
     """
@@ -106,7 +107,7 @@ class ReLU(nn.Module):
         return y
 
     def leastArea(self):
-        self.slope = torch.autograd.Variable(torch.clamp(self.slope_threshold, 0, 1), requires_grad=True)
+        self.slope = Variable(torch.clamp(self.slope_threshold, 0, 1), requires_grad=True)
         self.slope.retain_grad()
 
     @property

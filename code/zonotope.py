@@ -26,7 +26,7 @@ class Model(nn.Module):
     `_max_config_values` (torch.Tensor): For each label 'l', we calculate values of final epsilon terms such that
                                          score[l] obtains its maxima. Shape: (10, 10).
     `_min_config_values` (torch.Tensor): For our true label, we calculate values of final epsilon terms such that
-                                         score[true_label] obtains it's minima. Shape: (10, )
+                                         score[true_label] obtains its minima. Shape: (10, )
     """
 
     def __init__(self, model: nn.Module, eps: float, true_label: int):
@@ -84,9 +84,7 @@ class Model(nn.Module):
               if value @ `true_label` is highest.
 
         TODO: a) Input values can be b/w [0, 1]. Certain `eps_term` in Zonotope might change their upper or lower bound.
-              b) `condition` in `isExtremumValid` checks for negative & positive values. Extend to non-positive &
-                 non-negative
-              c) Other points to check so that verification is sound and complete.
+              b) Other points to check so that verification is sound and complete.
         """
 
         self._zono_pred = self.forward(x)

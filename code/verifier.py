@@ -18,10 +18,9 @@ parser.add_argument(
 )
 parser.add_argument("--spec", type=str, required=True, help="Test case to verify.")
 parser.add_argument("--debug", action="store_true", help="Flag to enable debug.")
-parser.add_argument("--train", action="store_true", help="Flag to train `slope`.")
 args = parser.parse_args()
 
-torch.set_grad_enabled(args.train)
+torch.set_grad_enabled(True)
 
 logging.basicConfig(level=(10 if args.debug else 20), format="%(asctime)s :: %(message)s")
 logger = logging.getLogger(__name__)
@@ -36,8 +35,6 @@ def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: 
     logger.debug(f"Base predictions: {base_pred[0]}")
 
     while not model.verify(inputs):
-        if not args.train:
-            return False
         model.updateParams()
     return True
 

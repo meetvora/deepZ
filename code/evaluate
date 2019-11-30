@@ -5,6 +5,6 @@ do
 	echo Evaluating network ${net}...
 	for spec in `ls ../test_cases/${net}`
 	do
-		python verifier.py --net ${net} --spec ../test_cases/${net}/${spec} --train
+		python verifier.py --net ${net} --spec ../test_cases/${net}/${spec}
 	done
 done
