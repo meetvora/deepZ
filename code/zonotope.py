@@ -54,7 +54,10 @@ class Model(nn.Module):
         loss = torch.mean(torch.clamp(self._min_config_values - self._min_config_values[self.true_label], -0.1))
 
         # Mean multiplied by `NUM_CLASSES` as mean divides sum by `NUM_CLASSES` * `NUM_CLASSES`
-        loss += torch.mean(torch.clamp(self._max_config_values.T - self._max_config_values[:, self.true_label], -0.1)) * NUM_CLASSES
+        loss += (
+            torch.mean(torch.clamp(self._max_config_values.T - self._max_config_values[:, self.true_label], -0.1))
+            * NUM_CLASSES
+        )
 
         optimizer.zero_grad()
         loss.backward(retain_graph=True)
