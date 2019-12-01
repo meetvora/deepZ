@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 
 
 def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: int) -> bool:
-    model = zonotope.Model(net, eps=eps, true_label=true_label)
+    model = zonotope.Model(model=net, eps=eps, x=inputs, true_label=true_label)
     base_pred = net(inputs)
     del net
 

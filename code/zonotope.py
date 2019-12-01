@@ -29,26 +29,34 @@ class Model(nn.Module):
                                          score[true_label] obtains its minima. Shape: (10, )
     """
 
-    def __init__(self, model: nn.Module, eps: float, true_label: int):
+    def __init__(self, model: nn.Module, eps: float, x:torch.Tensor, true_label: int):
         super().__init__()
         layers = [modLayer(layer) for layer in model.layers]
         self.net = nn.Sequential(*layers)
-        self.eps_terms = torch.diag(torch.ones(INPUT_SIZE * INPUT_SIZE) * eps)
-        self.eps_terms = self.eps_terms.reshape((INPUT_SIZE * INPUT_SIZE, 1, INPUT_SIZE, INPUT_SIZE))
+
+        x_max, x_min = torch.clamp(x+eps, max=1), torch.clamp(x-eps, min=0)
+        x_center = (x_max + x_min) * 0.5
+
+        eps_terms = x_max - x_center
+        eps_terms = torch.diag(torch.ones(INPUT_SIZE * INPUT_SIZE) * eps_terms.flatten())
+        eps_terms = eps_terms.reshape((INPUT_SIZE * INPUT_SIZE, 1, INPUT_SIZE, INPUT_SIZE))
+
+        self.box_input = torch.cat([x_center, eps_terms], dim=0)
+
         self.true_label = true_label
         self._max_config_values = torch.zeros(NUM_CLASSES, NUM_CLASSES)
         self._min_config_values = torch.zeros(NUM_CLASSES)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        box_input = torch.cat([x, self.eps_terms], dim=0)
-        return self.net(box_input)
+        return self.net(self.box_input)
 
     def updateParams(self):
         # Calculates the gradient of `loss` wrt to ReLU slopes.
         # TODO: Improve training objective.
 
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01, weight_decay=0)
+        optimizer = torch.optim.RMSprop(self.parameters(), lr=0.01, weight_decay=0)
 
+        # import pdb; pdb.set_trace()
         loss = torch.clamp(-self._min_diff, min=0).sum()
 
         # Losses are clipped such that values below -0.1 are set to -0.1. This is done to avoid effect of very large
