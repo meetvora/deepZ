@@ -38,10 +38,9 @@ class Conv(nn.Module):
         self.padding = layer.padding
         self.dilation = layer.dilation
         self.groups = layer.groups
-        self.zero_bias = torch.zeros_like(self.bias)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        y = F.conv2d(x, self.weight, self.zero_bias, self.stride, self.padding, self.dilation, self.groups)
+        y = F.conv2d(x, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
         y[0] += self.bias[:, None, None].repeat(1, y.shape[2], y.shape[3])
         del x
         return y
