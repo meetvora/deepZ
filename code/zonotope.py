@@ -47,7 +47,7 @@ class Model(nn.Module):
         # Calculates the gradient of `loss` wrt to ReLU slopes.
         # TODO: Improve training objective.
 
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, weight_decay=0)
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.01, weight_decay=0)
 
         loss = torch.clamp(-self._min_diff, min=0).sum()
 
@@ -100,9 +100,7 @@ class Model(nn.Module):
         difference_matrix = (self._zono_pred[:, self.true_label] - self._zono_pred.T).T
         self._min_diff = difference_matrix[0] - torch.abs(difference_matrix[1:]).sum(dim=0)
         if torch.any(self._min_diff < 0):
-            logger.debug(
-                f"Minimum difference obtained at `label {self._min_diff.argmin().item()}`: `{self._min_diff.min()}`"
-            )
+            logger.debug(f"Min difference @ `label {self._min_diff.argmin().item()}`: `{self._min_diff.min():.4f}`")
             return False
 
         self._min_config_values = self.getExtremum(self._zono_pred, minima=True, label=self.true_label)
