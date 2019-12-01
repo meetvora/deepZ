@@ -99,8 +99,8 @@ class ReLU(nn.Module):
         self.slope.data.clamp_(min=0, max=1)  # Requirement!
 
         x = self.slope * x * mask + (1 - mask) * x
-        x[0] = (x[0] + self.intercept * 0.5) * mask + (1 - mask) * x[0]
         new_eps_term = (torch.ones_like(x[0]) * self.intercept * 0.5) * mask
+        x[0] += new_eps_term
 
         y = torch.cat([x, new_eps_term[None, :]], dim=0)
         del x, new_eps_term
