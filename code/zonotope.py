@@ -37,6 +37,7 @@ class Model(nn.Module):
         self.eps_terms = self.eps_terms.reshape((INPUT_SIZE * INPUT_SIZE, 1, INPUT_SIZE, INPUT_SIZE))
         self.true_label = true_label
         self._max_config_values = torch.zeros(NUM_CLASSES, NUM_CLASSES)
+        self._min_config_values = torch.zeros(NUM_CLASSES)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         box_input = torch.cat([x, self.eps_terms], dim=0)
@@ -46,18 +47,20 @@ class Model(nn.Module):
         # Calculates the gradient of `loss` wrt to ReLU slopes.
         # TODO: Improve training objective.
 
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01, weight_decay=0)
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, weight_decay=0)
+
+        loss = torch.clamp(-self._min_diff, min=0).sum()
 
         # Losses are clipped such that values below -0.1 are set to -0.1. This is done to avoid effect of very large
         # negative values for certain neurons, which can take entire mean down. Clamping allows to ignore neurons which
         # are already less activated than our `true_label`
-        loss = torch.mean(torch.clamp(self._min_config_values - self._min_config_values[self.true_label], -0.1))
+        # loss += torch.mean(torch.clamp(self._min_config_values - self._min_config_values[self.true_label], -0.1))
 
         # Mean multiplied by `NUM_CLASSES` as mean divides sum by `NUM_CLASSES` * `NUM_CLASSES`
-        loss += (
-            torch.mean(torch.clamp(self._max_config_values.T - self._max_config_values[:, self.true_label], -0.1))
-            * NUM_CLASSES
-        )
+        # loss += (
+        #     torch.mean(torch.clamp(self._max_config_values.T - self._max_config_values[:, self.true_label], -0.1))
+        #     * NUM_CLASSES
+        # )
 
         optimizer.zero_grad()
         loss.backward(retain_graph=True)
@@ -92,9 +95,18 @@ class Model(nn.Module):
 
         self._zono_pred = self.forward(x)
 
+        # A matrix that stores difference of activations between `true_label` and label `l` in zonotope form.
+        # We check if any of these differences can obtain a negative value anytime.
+        difference_matrix = (self._zono_pred[:, self.true_label] - self._zono_pred.T).T
+        self._min_diff = difference_matrix[0] - torch.abs(difference_matrix[1:]).sum(dim=0)
+        if torch.any(self._min_diff < 0):
+            logger.debug(
+                f"Minimum difference obtained at `label {self._min_diff.argmin().item()}`: `{self._min_diff.min()}`"
+            )
+            return False
+
         self._min_config_values = self.getExtremum(self._zono_pred, minima=True, label=self.true_label)
         logger.debug(f"Values @ minimum of `true label: {self.true_label}`: {self._min_config_values}")
-
         if self._min_config_values.argmax().item() != self.true_label:
             return False
 
