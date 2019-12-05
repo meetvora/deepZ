@@ -38,6 +38,7 @@ class Model(nn.Module):
         self.true_label = true_label
         self._max_config_values = torch.zeros(NUM_CLASSES, NUM_CLASSES)
         self._min_config_values = torch.zeros(NUM_CLASSES)
+        # self.optimizer = torch.optim.Adam(self.parameters(), lr=0.001, weight_decay=0)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         box_input = torch.cat([x, self.eps_terms], dim=0)
@@ -47,7 +48,7 @@ class Model(nn.Module):
         # Calculates the gradient of `loss` wrt to ReLU slopes.
         # TODO: Improve training objective.
 
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.01, weight_decay=0)
+        optimizer = torch.optim.Adam(self.parameters(), lr=0.001, weight_decay=0)
 
         loss = torch.clamp(-self._min_diff, min=0).sum()
 
