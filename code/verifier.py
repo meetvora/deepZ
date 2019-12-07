@@ -31,7 +31,7 @@ def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: 
     base_pred = net(inputs)
     del net
 
-    logger.debug(f"[+] True label: {true_label}")
+    logger.debug(f"[+] True label: {true_label}, Epsilon: {eps}")
     logger.debug(f"Base predictions: {base_pred[0]}")
 
     while not model.verify():
