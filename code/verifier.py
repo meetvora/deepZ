@@ -27,14 +27,14 @@ logger = logging.getLogger(__name__)
 
 
 def analyze(net: torch.nn.Module, inputs: torch.Tensor, eps: float, true_label: int) -> bool:
-    model = zonotope.Model(net, eps=eps, true_label=true_label)
+    model = zonotope.Model(net, eps=eps, x=inputs, true_label=true_label)
     base_pred = net(inputs)
     del net
 
     logger.debug(f"[+] True label: {true_label}")
     logger.debug(f"Base predictions: {base_pred[0]}")
 
-    while not model.verify(inputs):
+    while not model.verify():
         model.updateParams()
     return True
 

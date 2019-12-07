@@ -101,8 +101,13 @@ class ReLU(nn.Module):
         new_eps_term = (torch.ones_like(x[0]) * self.intercept * 0.5) * mask
         x[0] += new_eps_term
 
-        new_eps_terms = torch.diag(new_eps_term)
-        new_eps_terms = new_eps_terms[new_eps_terms.sum(0) > 0]
+        indexes = torch.where(new_eps_term != 0)
+        output_dim, num_activations = [1] * len(indexes), len(indexes[0])
+        new_eps_terms = torch.zeros_like(new_eps_term).repeat(num_activations, *output_dim)
+        indexes = (torch.arange(num_activations), *indexes)
+        new_eps_terms[indexes] = 1
+        new_eps_terms *= new_eps_term
+
         y = torch.cat([x, new_eps_terms], dim=0)
         del x, new_eps_term
         return y
