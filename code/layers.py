@@ -21,7 +21,6 @@ class Linear(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         y = torch.mm(x, self.weight)
         y[0] += self.bias
-        del x
         return y
 
 
@@ -42,7 +41,6 @@ class Conv(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         y = F.conv2d(x, self.weight, None, self.stride, self.padding, self.dilation, self.groups)
         y[0] += self.bias[:, None, None].repeat(1, y.shape[2], y.shape[3])
-        del x
         return y
 
 
@@ -89,10 +87,7 @@ class ReLU(nn.Module):
     def convexApprox(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         if not hasattr(self, "slope"):
             self.leastArea()
-
-        y = self.addNewEpsilon(x, mask)
-
-        return y
+        return self.addNewEpsilon(x, mask)
 
     def addNewEpsilon(self, x: torch.Tensor, mask: torch.Tensor) -> torch.Tensor:
         self.slope.data.clamp_(min=0, max=1)  # Requirement!
@@ -107,10 +102,7 @@ class ReLU(nn.Module):
         indexes = (torch.arange(num_activations), *indexes)
         new_eps_terms[indexes] = 1
         new_eps_terms *= new_eps_term
-
-        y = torch.cat([x, new_eps_terms], dim=0)
-        del x, new_eps_term
-        return y
+        return torch.cat([x, new_eps_terms], dim=0)
 
     def leastArea(self):
         self.slope = Variable(torch.clamp(self.slope_threshold, 0, 1), requires_grad=True)
@@ -123,8 +115,7 @@ class ReLU(nn.Module):
     @property
     def intercept(self) -> torch.Tensor:
         mask = (self.slope > self.slope_threshold).float()
-        y = (-(self.slope * self.lower_bound) * mask) + ((1 - self.slope) * self.upper_bound * (1 - mask))
-        return y
+        return (-(self.slope * self.lower_bound) * mask) + ((1 - self.slope) * self.upper_bound * (1 - mask))
 
 
 def modLayer(layer: nn.Module) -> nn.Module:

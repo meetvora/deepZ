@@ -30,7 +30,7 @@ class Model(nn.Module):
 
         self.true_label = true_label
         self.forward()
-        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.01)
+        self.optimizer = torch.optim.Adam(self.parameters(), lr=0.05)
 
     def forward(self) -> torch.Tensor:
         return self.net(torch.cat([self.x, self.eps_terms], dim=0))
@@ -62,7 +62,7 @@ class Model(nn.Module):
 
         # A matrix that stores difference of activations between `true_label` and label `l` in zonotope form.
         # We check if any of these differences can obtain a negative value anytime.
-        difference_matrix = (self._zono_pred[:, self.true_label] - self._zono_pred.T).T
+        difference_matrix = self._zono_pred[:, self.true_label, None] - self._zono_pred
         self._min_diff = difference_matrix[0] - torch.abs(difference_matrix[1:]).sum(dim=0)
         if torch.any(self._min_diff < 0):
             logger.debug(f"Min difference @ `label {self._min_diff.argmin().item()}`: {self._min_diff.min():.4f}")
